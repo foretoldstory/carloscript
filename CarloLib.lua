@@ -1,5 +1,5 @@
 -- ====================================================================================
--- CARLOLIB V2.0 - PASTEL BLUE EDITION WITH INTEGRATED MINIMIZE & TOGGLE KEYBIND
+-- CARLOLIB V4.0 - PASTEL BLUE EDITION (FULL INTEGRATED FOR CLARO MASTER)
 -- ====================================================================================
 
 local CarloLib = {}
@@ -11,24 +11,21 @@ function CarloLib:CreateWindow(options)
     options = options or {}
     local titleText = options.Title or "Carlo UI"
     local theme = options.Theme or {
-        MainColor = Color3.fromRGB(235, 245, 251),    -- Nền xanh pastel rất nhạt
-        AccentColor = Color3.fromRGB(93, 173, 226),   -- Xanh dương thanh lịch nhấn nút
-        BackgroundColor = Color3.fromRGB(214, 234, 248), -- Thanh bên sidebar
-        TextColor = Color3.fromRGB(46, 64, 87)        -- Chữ màu tối dễ nhìn
+        MainColor = Color3.fromRGB(235, 245, 251),
+        AccentColor = Color3.fromRGB(93, 173, 226),
+        BackgroundColor = Color3.fromRGB(214, 234, 248),
+        TextColor = Color3.fromRGB(46, 64, 87)
     }
 
-    -- Tự động dọn dẹp các phiên bản UI cũ tránh bị đè màn hình
     if CoreGui:FindFirstChild("CarloLibUI") then
         CoreGui.CarloLibUI:Destroy()
     end
 
-    -- Khởi tạo ScreenGui chính
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "CarloLibUI"
     ScreenGui.Parent = CoreGui
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-    -- Cửa sổ chính (Main Frame)
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
     MainFrame.Parent = ScreenGui
@@ -42,7 +39,6 @@ function CarloLib:CreateWindow(options)
     MainCorner.CornerRadius = UDim.new(0, 12)
     MainCorner.Parent = MainFrame
 
-    -- Thanh tiêu đề / Header
     local Header = Instance.new("Frame")
     Header.Name = "Header"
     Header.Parent = MainFrame
@@ -57,14 +53,13 @@ function CarloLib:CreateWindow(options)
     TitleLabel.Parent = Header
     TitleLabel.Text = titleText
     TitleLabel.Font = Enum.Font.FredokaOne
-    TitleLabel.TextSize = 16
+    TitleLabel.TextSize = 15
     TitleLabel.TextColor3 = theme.TextColor
     TitleLabel.Position = UDim2.new(0, 15, 0, 0)
-    TitleLabel.Size = UDim2.new(0, 200, 1, 0)
+    TitleLabel.Size = UDim2.new(0, 350, 1, 0)
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.BackgroundTransparency = 1
 
-    -- Sidebar chứa danh sách các Tab
     local Sidebar = Instance.new("Frame")
     Sidebar.Name = "Sidebar"
     Sidebar.Parent = MainFrame
@@ -77,7 +72,6 @@ function CarloLib:CreateWindow(options)
     SidebarCorner.CornerRadius = UDim.new(0, 12)
     SidebarCorner.Parent = Sidebar
 
-    -- Container tổng chứa nội dung các Tab
     local ContainerHolder = Instance.new("Frame")
     ContainerHolder.Name = "ContainerHolder"
     ContainerHolder.Parent = MainFrame
@@ -85,13 +79,9 @@ function CarloLib:CreateWindow(options)
     ContainerHolder.Size = UDim2.new(1, -170, 1, -60)
     ContainerHolder.BackgroundTransparency = 1
 
-    -- ====================================================================
-    -- HỆ THỐNG NÚT ĐIỀU KHIỂN WINDOW TÍCH HỢP (MINIMIZE & HIDE)
-    -- ====================================================================
     local OriginalSize = MainFrame.Size
     local IsMinimized = false
 
-    -- Nút Ẩn tạm thời (Dấu X)
     local CloseBtn = Instance.new("TextButton")
     CloseBtn.Name = "CloseBtn"
     CloseBtn.Parent = Header
@@ -103,13 +93,8 @@ function CarloLib:CreateWindow(options)
     CloseBtn.Size = UDim2.new(0, 30, 0, 30)
     CloseBtn.BackgroundTransparency = 1
     CloseBtn.ZIndex = 100
+    CloseBtn.MouseButton1Click:Connect(function() ScreenGui.Enabled = false end)
 
-    CloseBtn.MouseButton1Click:Connect(function()
-        ScreenGui.Enabled = false
-        print("UI Claro đã ẩn tạm thời. Nhấn RightControl để mở lại!")
-    end)
-
-    -- Nút Thu gọn Window (Dấu trừ −)
     local MinimizeBtn = Instance.new("TextButton")
     MinimizeBtn.Name = "MinimizeBtn"
     MinimizeBtn.Parent = Header
@@ -117,7 +102,7 @@ function CarloLib:CreateWindow(options)
     MinimizeBtn.Font = Enum.Font.FredokaOne
     MinimizeBtn.TextSize = 22
     MinimizeBtn.TextColor3 = theme.TextColor
-    MinimizeBtn.Position = UDim2.new(1, -65, 0, 5) -- Đặt thụt lùi sang trái để không đè nút X
+    MinimizeBtn.Position = UDim2.new(1, -65, 0, 5)
     MinimizeBtn.Size = UDim2.new(0, 30, 0, 30)
     MinimizeBtn.BackgroundTransparency = 1
     MinimizeBtn.ZIndex = 100
@@ -125,13 +110,11 @@ function CarloLib:CreateWindow(options)
     MinimizeBtn.MouseButton1Click:Connect(function()
         IsMinimized = not IsMinimized
         if IsMinimized then
-            -- Co nhỏ frame lại chỉ còn thanh Header (Cao 40 pixel)
             MainFrame:TweenSize(UDim2.new(OriginalSize.X.Scale, OriginalSize.X.Offset, 0, 40), "Out", "Quad", 0.2, true)
-            MinimizeBtn.Text = "+" -- Biến thành dấu cộng báo hiệu mở rộng
+            MinimizeBtn.Text = "+"
             Sidebar.Visible = false
             ContainerHolder.Visible = false
         else
-            -- Bật to lại kích thước cũ
             MainFrame:TweenSize(OriginalSize, "Out", "Quad", 0.2, true)
             MinimizeBtn.Text = "−"
             task.wait(0.1)
@@ -140,15 +123,12 @@ function CarloLib:CreateWindow(options)
         end
     end)
 
-    -- Lắng nghe phím RightControl từ hệ thống để bật tắt UI mọi lúc
     UserInputService.InputBegan:Connect(function(input, processed)
-        if processed then return end
-        if input.KeyCode == Enum.KeyCode.RightControl then
+        if not processed and input.KeyCode == Enum.KeyCode.RightControl then
             ScreenGui.Enabled = not ScreenGui.Enabled
         end
     end)
 
-    -- Hệ thống xử lý logic tạo Tab & Element
     local tabCount = 0
     local currentTab = nil
     local windowMethods = {}
@@ -165,10 +145,7 @@ function CarloLib:CreateWindow(options)
         TabBtn.TextSize = 13
         TabBtn.TextColor3 = theme.TextColor
         TabBtn.BackgroundColor3 = theme.MainColor
-        
-        local BtnCorner = Instance.new("UICorner")
-        BtnCorner.CornerRadius = UDim.new(0, 6)
-        BtnCorner.Parent = TabBtn
+        Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 6)
 
         local TabContainer = Instance.new("ScrollingFrame")
         TabContainer.Parent = ContainerHolder
@@ -180,7 +157,6 @@ function CarloLib:CreateWindow(options)
 
         local elementCount = 0
 
-        -- Mặc định mở Tab đầu tiên
         if tabCount == 1 then
             TabContainer.Visible = true
             TabBtn.BackgroundColor3 = theme.AccentColor
@@ -316,16 +292,18 @@ function CarloLib:CreateWindow(options)
             end)
         end
 
-        -- Thành phần UI: Dropdown
+        -- Thành phần UI: Dropdown nâng cấp dạng trượt xổ xuống
         function tabMethods:CreateDropdown(dropdownName, list, default, callback)
             elementCount = elementCount + 1
             local selected = default or list[1]
+            local isOpened = false
 
             local DropFrame = Instance.new("Frame")
             DropFrame.Size = UDim2.new(1, -5, 0, 35)
             DropFrame.Position = UDim2.new(0, 0, 0, (elementCount - 1) * 40)
             DropFrame.BackgroundColor3 = theme.BackgroundColor
             DropFrame.Parent = TabContainer
+            DropFrame.ZIndex = 100 - elementCount
             Instance.new("UICorner", DropFrame).CornerRadius = UDim.new(0, 6)
 
             local Label = Instance.new("TextLabel")
@@ -333,15 +311,15 @@ function CarloLib:CreateWindow(options)
             Label.Font = Enum.Font.FredokaOne
             Label.TextSize = 13
             Label.TextColor3 = theme.TextColor
-            Label.Size = UDim2.new(0.5, 0, 1, 0)
+            Label.Size = UDim2.new(0.5, 0, 0, 35)
             Label.Position = UDim2.new(0, 10, 0, 0)
             Label.TextXAlignment = Enum.TextXAlignment.Left
             Label.BackgroundTransparency = 1
             Label.Parent = DropFrame
 
             local Btn = Instance.new("TextButton")
-            Btn.Size = UDim2.new(0, 120, 0, 23)
-            Btn.Position = UDim2.new(1, -130, 0.5, -11)
+            Btn.Size = UDim2.new(0, 120, 0, 25)
+            Btn.Position = UDim2.new(1, -130, 0, 5)
             Btn.Font = Enum.Font.FredokaOne
             Btn.TextSize = 11
             Btn.Text = tostring(selected) .. " ▾"
@@ -350,68 +328,51 @@ function CarloLib:CreateWindow(options)
             Btn.Parent = DropFrame
             Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 4)
 
+            local ScrollList = Instance.new("ScrollingFrame")
+            ScrollList.Size = UDim2.new(0, 120, 0, 0)
+            ScrollList.Position = UDim2.new(1, -130, 0, 32)
+            ScrollList.BackgroundColor3 = theme.MainColor
+            ScrollList.BorderSizePixel = 0
+            ScrollList.ZIndex = 999
+            ScrollList.Visible = false
+            ScrollList.ScrollBarThickness = 3
+            ScrollList.Parent = DropFrame
+            Instance.new("UICorner", ScrollList).CornerRadius = UDim.new(0, 4)
+
+            local listLayout = Instance.new("UIListLayout")
+            listLayout.Parent = ScrollList
+
+            for _, option in ipairs(list) do
+                local OptBtn = Instance.new("TextButton")
+                OptBtn.Size = UDim2.new(1, 0, 0, 25)
+                OptBtn.Text = tostring(option)
+                OptBtn.Font = Enum.Font.FredokaOne
+                OptBtn.TextSize = 11
+                OptBtn.TextColor3 = theme.TextColor
+                OptBtn.BackgroundTransparency = 1
+                OptBtn.ZIndex = 1000
+                OptBtn.Parent = ScrollList
+
+                OptBtn.MouseButton1Click:Connect(function()
+                    selected = option
+                    Btn.Text = tostring(selected) .. " ▾"
+                    ScrollList.Size = UDim2.new(0, 120, 0, 0)
+                    ScrollList.Visible = false
+                    isOpened = false
+                    callback(selected)
+                end)
+            end
+
             Btn.MouseButton1Click:Connect(function()
-                local currIdx = table.find(list, selected) or 1
-                local nextIdx = currIdx + 1
-                if nextIdx > #list then nextIdx = 1 end
-                selected = list[nextIdx]
-                Btn.Text = tostring(selected) .. " ▾"
-                callback(selected)
-            end)
-        end
-
-        -- Thành phần UI: Keybind
-        function tabMethods:CreateKeybind(bindName, defaultKey, callback)
-            elementCount = elementCount + 1
-            local currentKey = defaultKey
-
-            local BindFrame = Instance.new("Frame")
-            BindFrame.Size = UDim2.new(1, -5, 0, 35)
-            BindFrame.Position = UDim2.new(0, 0, 0, (elementCount - 1) * 40)
-            BindFrame.BackgroundColor3 = theme.BackgroundColor
-            BindFrame.Parent = TabContainer
-            Instance.new("UICorner", BindFrame).CornerRadius = UDim.new(0, 6)
-
-            local Label = Instance.new("TextLabel")
-            Label.Text = bindName
-            Label.Font = Enum.Font.FredokaOne
-            Label.TextSize = 13
-            Label.TextColor3 = theme.TextColor
-            Label.Size = UDim2.new(0.6, 0, 1, 0)
-            Label.Position = UDim2.new(0, 10, 0, 0)
-            Label.TextXAlignment = Enum.TextXAlignment.Left
-            Label.BackgroundTransparency = 1
-            Label.Parent = BindFrame
-
-            local Btn = Instance.new("TextButton")
-            Btn.Size = UDim2.new(0, 80, 0, 23)
-            Btn.Position = UDim2.new(1, -90, 0.5, -11)
-            Btn.Font = Enum.Font.FredokaOne
-            Btn.TextSize = 11
-            Btn.Text = currentKey and currentKey.Name or "None"
-            Btn.BackgroundColor3 = theme.MainColor
-            Btn.TextColor3 = theme.TextColor
-            Btn.Parent = BindFrame
-            Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 4)
-
-            local listening = false
-            Btn.MouseButton1Click:Connect(function()
-                listening = true
-                Btn.Text = "..."
-                Btn.BackgroundColor3 = theme.AccentColor
-                Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            end)
-
-            UserInputService.InputBegan:Connect(function(input, processed)
-                if listening and not processed then
-                    if input.UserInputType == Enum.UserInputType.Keyboard then
-                        listening = false
-                        currentKey = input.KeyCode
-                        Btn.Text = currentKey.Name
-                        Btn.BackgroundColor3 = theme.MainColor
-                        Btn.TextColor3 = theme.TextColor
-                        callback(currentKey)
-                    end
+                isOpened = not isOpened
+                if isOpened then
+                    ScrollList.Visible = true
+                    ScrollList:TweenSize(UDim2.new(0, 120, 0, math.min(#list * 25, 100)), "Out", "Quad", 0.15, true)
+                    ScrollList.CanvasSize = UDim2.new(0, 0, 0, #list * 25)
+                else
+                    ScrollList:TweenSize(UDim2.new(0, 120, 0, 0), "Out", "Quad", 0.15, true)
+                    task.wait(0.15)
+                    ScrollList.Visible = false
                 end
             end)
         end
