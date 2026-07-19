@@ -1,0 +1,190 @@
+-- SKIN MODULE - BLUE EDITION :3
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+
+local Skin = {
+    Enabled = false,
+    DoubleBarrel = "Default",
+    Revolver = "Default",
+    Shotgun = "Default",
+    SMG = "Default",
+    TacticalShotgun = "Default",
+    Knife = "--",
+    Bullet_Enabled = false,
+    Bullet_Texture = "None",
+}
+
+local GUN_SKINS = {
+    "Default", "Ascension", "Void Dragon", "Hell Hound", "Snow Dragon", "Lovestruck",
+    "Adurite", "Hallows", "Candy Cane", "Heartbringer", "Arctic", "Lightbringer",
+    "Deathbringer", "Hell Dragon", "Kitty", "Kirumi", "Shiryus Breath", "Poseidon",
+    "Amethyst", "Arsenic", "Volcanic Ashes", "Floral", "Binary", "Voxel",
+    "Hello Kitty", "Radiation", "Void", "Hexagram", "Strawberry Shortcake",
+    "Black Ice", "Crimson Fangs", "Green Tint", "Ember",
+}
+
+local KNIFE_SKINS = { "--", "Beta", "Fishbone" }
+local BULLET_SKINS = { "None", "Beta", "Hallows", "Kitty", "Kirumi", "Rainbow", "Red", "Blue", "Green", "Orange" }
+
+local BULLET_CODES = {
+    DoubleBarrel = "109d1326878cc594bc1bb42d126250810999782f",
+    Revolver = "539db315b53f77390c0aa74773158e25bedcdd6e",
+    Shotgun = "b415a7273aa86cbc2adc445fde5435eb5afababa",
+    SMG = "005af87725b42ac4ca8103d11af6bf0c7d55f7b3",
+    TacticalShotgun = "109d1326878cc594bc1bb42d126250810999782f",
+}
+
+local function WeldParts(p0, p1)
+    local w = Instance.new("WeldConstraint")
+    w.Part0 = p0
+    w.Part1 = p1
+    w.Parent = p0
+end
+
+local function StripSkin(weapon)
+    local handle = weapon:FindFirstChild("Handle")
+    if handle then handle.Transparency = 0 end
+    for _, child in ipairs(weapon:GetChildren()) do
+        if child:IsA("Model") and child:FindFirstChild("_ClaroSkin") then
+            child:Destroy()
+        end
+    end
+end
+
+local function ApplySkinToWeapon(weapon, model)
+    StripSkin(weapon)
+    local handle = weapon:FindFirstChild("Handle")
+    if not handle then return end
+    
+    local clone = model:Clone()
+    if not clone.PrimaryPart then
+        clone.PrimaryPart = clone:FindFirstChildWhichIsA("BasePart")
+    end
+    if not clone.PrimaryPart then return end
+    
+    local tag = Instance.new("BoolValue", clone)
+    tag.Name = "_ClaroSkin"
+    
+    for _, part in ipairs(clone:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = false
+            part.Anchored = false
+            part.Massless = true
+            if part ~= clone.PrimaryPart then
+                WeldParts(clone.PrimaryPart, part)
+            end
+        end
+    end
+    
+    clone.Parent = weapon
+    clone:SetPrimaryPartCFrame(handle.CFrame)
+    WeldParts(handle, clone.PrimaryPart)
+    handle.Transparency = 1
+end
+
+local function IsNoSkin(name)
+    return (not name) or name == "None" or name == "Default" or name == "--"
+end
+
+function Skin:ApplySkins()
+    if not self.Enabled then return end
+    
+    local bp = LocalPlayer:FindFirstChild("Backpack")
+    if not bp then return end
+    
+    local RS = ReplicatedStorage
+    
+    local gunMap = {
+        DoubleBarrel = self.DoubleBarrel,
+        Revolver = self.Revolver,
+        Shotgun = self.Shotgun,
+        SMG = self.SMG,
+        TacticalShotgun = self.TacticalShotgun,
+    }
+    
+    for weaponKey, skinName in pairs(gunMap) do
+        local weapon = bp:FindFirstChild("[" .. weaponKey .. "]")
+        if weapon then
+            if not IsNoSkin(skinName) then
+                local skinFolder = RS:FindFirstChild("Wraps") and RS.Wraps:FindFirstChild("[" .. weaponKey .. "]")
+                if skinFolder and skinFolder:FindFirstChild(skinName) then
+                    ApplySkinToWeapon(weapon, skinFolder[skinName])
+                end
+            else
+                StripSkin(weapon)
+            end
+        end
+    end
+    
+    local knife = bp:FindFirstChild("[Knife]")
+    if knife then
+        if not IsNoSkin(self.Knife) then
+            local knivesFolder = RS:FindFirstChild("Knives")
+            if knivesFolder and knivesFolder:FindFirstChild(self.Knife) then
+                ApplySkinToWeapon(knife, knivesFolder[self.Knife])
+            end
+        else
+            StripSkin(knife)
+        end
+    end
+end
+
+function Skin:ResetSkins()
+    local bp = LocalPlayer:FindFirstChild("Backpack")
+    if not bp then return end
+    
+    local weapons = bp:GetChildren()
+    if LocalPlayer.Character then
+        for _, c in ipairs(LocalPlayer.Character:GetChildren()) do
+            if c:IsA("Tool") then
+                table.insert(weapons, c)
+            end
+        end
+    end
+    
+    for _, weapon in ipairs(weapons) do
+        if weapon:IsA("Tool") then
+            StripSkin(weapon)
+        end
+    end
+end
+
+function Skin:ApplyBullets()
+    if not (self.Bullet_Enabled and self.Bullet_Texture ~= "None") then
+        return
+    end
+    
+    local dataFolder = LocalPlayer:FindFirstChild("DataFolder")
+    if not dataFolder then return end
+    
+    local inventoryData = dataFolder:FindFirstChild("InventoryData")
+    local equippedBB = dataFolder:FindFirstChild("EquippedBulletBeams")
+    
+    if inventoryData and inventoryData:FindFirstChild("BulletBeams") then
+        local beamData = {}
+        for _, code in pairs(BULLET_CODES) do
+            beamData[code] = { Name = self.Bullet_Texture }
+        end
+        inventoryData.BulletBeams.Value = HttpService:JSONEncode(beamData)
+    end
+    
+    if equippedBB and equippedBB:IsA("StringValue") then
+        local equipped = {}
+        for weaponKey, code in pairs(BULLET_CODES) do
+            equipped["[" .. weaponKey .. "]"] = code
+        end
+        equippedBB.Value = HttpService:JSONEncode(equipped)
+    end
+end
+
+LocalPlayer.CharacterAdded:Connect(function()
+    task.delay(1.2, function()
+        if Skin.Enabled then Skin:ApplySkins() end
+        if Skin.Bullet_Enabled then Skin:ApplyBullets() end
+    end)
+end)
+
+return Skin
