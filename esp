@@ -1,0 +1,201 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local CurrentCamera = workspace.CurrentCamera
+local RunService = game:GetService("RunService")
+
+local ESP = {
+    Enabled = false,
+    Boxes = true,
+    Names = true,
+    Distance = true,
+    HealthBar = true,
+    FootCircle = true,
+    TeamColor = true,
+    Color = Color3.fromRGB(255, 255, 255),
+}
+
+local ESP_Cache = {}
+
+local function CreateESP(player)
+    local drawings = {
+        Box = Drawing.new("Square"),
+        Name = Drawing.new("Text"),
+        Distance = Drawing.new("Text"),
+        HealthBar = Drawing.new("Square"),
+        HealthBg = Drawing.new("Square"),
+        HealthText = Drawing.new("Text"),
+        FootCircle = Drawing.new("Circle"),
+    }
+    
+    drawings.Box.Thickness = 1.5
+    drawings.Box.Filled = false
+    drawings.Box.Transparency = 0.5
+    
+    drawings.Name.Font = 3 -- Fonts.UI
+    drawings.Name.Size = 16
+    drawings.Name.Center = true
+    drawings.Name.Outline = true
+    drawings.Name.OutlineColor = Color3.fromRGB(0, 0, 0)
+    
+    drawings.Distance.Font = 3
+    drawings.Distance.Size = 13
+    drawings.Distance.Center = true
+    drawings.Distance.Outline = true
+    drawings.Distance.OutlineColor = Color3.fromRGB(0, 0, 0)
+    drawings.Distance.Color = Color3.fromRGB(200, 200, 200)
+    
+    drawings.HealthBar.Thickness = 0
+    drawings.HealthBar.Filled = true
+    drawings.HealthBar.Transparency = 0.4
+    
+    drawings.HealthBg.Thickness = 0
+    drawings.HealthBg.Filled = true
+    drawings.HealthBg.Transparency = 0.3
+    drawings.HealthBg.Color = Color3.fromRGB(20, 20, 20)
+    
+    drawings.HealthText.Font = 3
+    drawings.HealthText.Size = 12
+    drawings.HealthText.Center = true
+    drawings.HealthText.Outline = true
+    drawings.HealthText.OutlineColor = Color3.fromRGB(0, 0, 0)
+    
+    drawings.FootCircle.Thickness = 2
+    drawings.FootCircle.Filled = false
+    drawings.FootCircle.Transparency = 0.4
+    drawings.FootCircle.NumSides = 32
+
+    ESP_Cache[player] = drawings
+end
+
+local function RemoveESP(player)
+    if ESP_Cache[player] then
+        for _, obj in pairs(ESP_Cache[player]) do obj:Remove() end
+        ESP_Cache[player] = nil
+    end
+end
+
+Players.PlayerAdded:Connect(CreateESP)
+Players.PlayerRemoving:Connect(RemoveESP)
+for _, p in ipairs(Players:GetPlayers()) do if p ~= LocalPlayer then CreateESP(p) end end
+
+RunService.RenderStepped:Connect(function()
+    for player, drawing in pairs(ESP_Cache) do
+        if ESP.Enabled and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local Humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+            if Humanoid and Humanoid.Health > 0 then
+                local RootPart = player.Character.HumanoidRootPart
+                local Pos, OnScreen = CurrentCamera:WorldToViewportPoint(RootPart.Position)
+                
+                if OnScreen then
+                    local TopPoint = RootPart.Position + Vector3.new(0, 3, 0)
+                    local BottomPoint = RootPart.Position - Vector3.new(0, 3.5, 0)
+                    local TopScreen = CurrentCamera:WorldToViewportPoint(TopPoint)
+                    local BottomScreen = CurrentCamera:WorldToViewportPoint(BottomPoint)
+                    
+                    local BoxHeight = math.abs(TopScreen.Y - BottomScreen.Y)
+                    local BoxWidth = BoxHeight * 0.62
+                    local BoxPos = Vector2.new(Pos.X - BoxWidth / 2, Pos.Y - BoxHeight / 2)
+                    
+                    -- Team color
+                    local espColor = ESP.Color
+                    if ESP.TeamColor then
+                        local team = player.Team
+                        if team then espColor = team.TeamColor end
+                    end
+                    
+                    -- Box
+                    if ESP.Boxes then
+                        drawing.Box.Size = Vector2.new(BoxWidth, BoxHeight)
+                        drawing.Box.Position = BoxPos
+                        drawing.Box.Color = espColor
+                        drawing.Box.Visible = true
+                    else drawing.Box.Visible = false end
+                    
+                    -- Name
+                    if ESP.Names then
+                        drawing.Name.Text = player.Name
+                        drawing.Name.Position = Vector2.new(Pos.X, (Pos.Y - BoxHeight / 2) - 20)
+                        drawing.Name.Color = espColor
+                        drawing.Name.Visible = true
+                    else drawing.Name.Visible = false end
+                    
+                    -- Distance
+                    if ESP.Distance then
+                        local Dist = math.round((LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and (LocalPlayer.Character.HumanoidRootPart.Position - RootPart.Position).Magnitude) or 0)
+                        drawing.Distance.Text = Dist .. "m"
+                        drawing.Distance.Position = Vector2.new(Pos.X, (Pos.Y + BoxHeight / 2) + 6)
+                        drawing.Distance.Visible = true
+                    else drawing.Distance.Visible = false end
+                    
+                    -- Health Bar xịn
+                    if ESP.HealthBar then
+                        local healthPercent = math.clamp(Humanoid.Health / Humanoid.MaxHealth, 0, 1)
+                        local barWidth = BoxWidth + 8
+                        local barHeight = 6
+                        local barX = BoxPos.X - 4
+                        local barY = BoxPos.Y - 10
+                        
+                        -- Background
+                        drawing.HealthBg.Size = Vector2.new(barWidth, barHeight)
+                        drawing.HealthBg.Position = Vector2.new(barX, barY)
+                        drawing.HealthBg.Visible = true
+                        
+                        -- Health fill (gradient từ đỏ -> vàng -> xanh)
+                        local r = 255 * (1 - healthPercent)
+                        local g = 255 * healthPercent
+                        local b = 0
+                        drawing.HealthBar.Size = Vector2.new(barWidth * healthPercent, barHeight)
+                        drawing.HealthBar.Position = Vector2.new(barX, barY)
+                        drawing.HealthBar.Color = Color3.fromRGB(r, g, b)
+                        drawing.HealthBar.Visible = true
+                        
+                        -- Text % HP
+                        drawing.HealthText.Text = math.round(healthPercent * 100) .. "%"
+                        drawing.HealthText.Position = Vector2.new(barX + barWidth / 2, barY + barHeight / 2)
+                        drawing.HealthText.Color = Color3.fromRGB(255, 255, 255)
+                        drawing.HealthText.Visible = true
+                    else
+                        drawing.HealthBg.Visible = false
+                        drawing.HealthBar.Visible = false
+                        drawing.HealthText.Visible = false
+                    end
+                    
+                    -- Foot Circle
+                    if ESP.FootCircle then
+                        local footPos = BottomScreen
+                        drawing.FootCircle.Position = Vector2.new(footPos.X, footPos.Y + 4)
+                        drawing.FootCircle.Radius = BoxWidth * 0.35
+                        drawing.FootCircle.Color = espColor
+                        drawing.FootCircle.Visible = true
+                    else drawing.FootCircle.Visible = false end
+                else
+                    drawing.Box.Visible = false
+                    drawing.Name.Visible = false
+                    drawing.Distance.Visible = false
+                    drawing.HealthBg.Visible = false
+                    drawing.HealthBar.Visible = false
+                    drawing.HealthText.Visible = false
+                    drawing.FootCircle.Visible = false
+                end
+            else
+                drawing.Box.Visible = false
+                drawing.Name.Visible = false
+                drawing.Distance.Visible = false
+                drawing.HealthBg.Visible = false
+                drawing.HealthBar.Visible = false
+                drawing.HealthText.Visible = false
+                drawing.FootCircle.Visible = false
+            end
+        else
+            drawing.Box.Visible = false
+            drawing.Name.Visible = false
+            drawing.Distance.Visible = false
+            drawing.HealthBg.Visible = false
+            drawing.HealthBar.Visible = false
+            drawing.HealthText.Visible = false
+            drawing.FootCircle.Visible = false
+        end
+    end
+end)
+
+return ESP
